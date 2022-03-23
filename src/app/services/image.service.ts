@@ -13,7 +13,6 @@ export class ImageService {
 
   publishImage(file: File) {
     // TODO: image validation
-    
     return this.ipfsService.uploadFile(file);
   }
 

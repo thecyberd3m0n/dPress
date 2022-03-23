@@ -81,8 +81,6 @@ export class IpfsService {
     }
   }
 
-
-
   /**
    * @description Get the ID information about the current IPFS node
    * @return {Promise<IPFS_ROOT_TYPES.IDResult>}
@@ -115,7 +113,7 @@ export class IpfsService {
       | Iterable<number>
       | AsyncIterable<Uint8Array>
       | ReadableStream<Uint8Array>
-      | String
+      | ArrayBuffer
   ): Observable<any> {
     return this.ipfs$.pipe(
       switchMap(async (ipfs) => {
@@ -127,16 +125,43 @@ export class IpfsService {
         } catch (e) {
           console.error(e);
         }
-        
       }),
       tap((file) => console.log('file saved', file))
     );
   }
 
   getFile(path: string) {
-    return this.ipfs$.pipe(switchMap((ipfs) => {
+    return this.ipfs$.pipe(
+      switchMap((ipfs) => {
+        return from(ipfs.cat(path));
+      }),
+      tap((x) => console.log('gotFile', x)),
+      first()
+    );
+  }
 
-      return from(ipfs.get(path))
-    }),first());
-  } 
+  private cat(ipfs: any, path: string) {
+    return new Promise((resolve, reject) => {
+      ipfs.cat(path, { buffer: true }, (err: any, stream: any) => {
+        if (err) {
+          reject(err);
+        }
+        let res = '';
+
+        stream.on('data', function (chunk: any) {
+          res += chunk.toString();
+        });
+
+        stream.on('error', function (err: any) {
+          console.error(err);
+          throw new Error(`Cannot read path ${ipfs}`);
+        });
+
+        stream.on('end', function () {
+          console.log('Got:', res);
+          resolve(res);
+        });
+      });
+    });
+  }
 }
