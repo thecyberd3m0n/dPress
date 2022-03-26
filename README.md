@@ -194,7 +194,7 @@ npm install -g @angular/cli
 ```
 - clone project
 ```
-git@github.com:ipfs-examples/js-ipfs-browser-angular.git
+git@github.com:thecyberd3m0n/dPress.git
 ```
 
 - open src/environment.ts file
