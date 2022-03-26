@@ -1,0 +1,7 @@
+.article-image {
+  height: 300px;
+  width: 47vw;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}

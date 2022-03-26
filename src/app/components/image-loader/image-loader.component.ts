@@ -18,9 +18,7 @@ export class ImageLoaderComponent implements OnInit {
   ngOnInit(): void {
     if (this.path) {
       this.imageService.getImage(this.path).subscribe((result) => {
-        console.log(result);
-        this.base64 = this.sanitizer.bypassSecurityTrustUrl('data:image/png;base64,' + result);
-        console.log('base64', this.base64)
+        this.base64 = this.sanitizer.bypassSecurityTrustStyle('url(data:image/png;base64,' + result + ')');
         this.changeDetectorRef.detectChanges();
       });
     }

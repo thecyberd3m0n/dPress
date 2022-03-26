@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
-
-import { IPFS, create } from 'ipfs-core';
-import { MFSEntry } from 'ipfs-core-types/src/files';
+import { create, IPFS } from 'ipfs-core';
 import * as IPFS_ROOT_TYPES from 'ipfs-core-types/src/root';
 import {
   BehaviorSubject,
@@ -10,7 +8,6 @@ import {
   from,
   map,
   Observable,
-  of,
   switchMap,
   tap,
 } from 'rxjs';
@@ -26,14 +23,6 @@ export class IpfsService {
     .pipe(filter((x) => !!x)) as Observable<IPFS>;
   // private _createIPFSNodePromise: Promise<IPFS>;
   node: IPFS | null = null;
-  // private get ipfs() {
-  //   const getter = async () => {
-  //     let node = this._ipfsSource.getValue();
-  //     if (node == null) {
-  //       console.log("Waiting node creation...")
-
-  //       node = await this._createIPFSNodePromise as IPFS;
-  //       console.log('created node', node);
 
   //       this._ipfsSource.next(node);
   //     }
@@ -52,35 +41,14 @@ export class IpfsService {
     if (this.node == null) {
       console.log('Waiting node creation...');
 
-      this.node = (await create({
-        start: true,
-        repo: environment.rootDirectory,
-        EXPERIMENTAL: {
-          ipnsPubsub: true,
-        },
-        config: {
-          Addresses: environment.IPFSConfigAddresses,
-          Discovery: {
-            MDNS: {
-              Enabled: false,
-              Interval: 10,
-            },
-            webRTCStar: {
-              Enabled: true,
-            },
-          },
-          Bootstrap: [
-            '/dns4/wss0.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
-            '/dns4/wss1.bootstrap.libp2p.io/tcp/443/wss/ipfs/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
-          ],
-        },
-      })) as IPFS;
+      this.node = (await create(environment.IPFSConfig)) as IPFS;
       console.log(this.node);
-      // await this.syncDirectories();
+
+      await this.connectToPeers();
+      setInterval(async () => await this.connectToPeers(), 15000)
       this._ipfsSource.next(this.node);
     }
   }
-
 
 
   /**
@@ -115,7 +83,7 @@ export class IpfsService {
       | Iterable<number>
       | AsyncIterable<Uint8Array>
       | ReadableStream<Uint8Array>
-      | String
+      | ArrayBuffer
   ): Observable<any> {
     return this.ipfs$.pipe(
       switchMap(async (ipfs) => {
@@ -127,16 +95,61 @@ export class IpfsService {
         } catch (e) {
           console.error(e);
         }
-        
       }),
       tap((file) => console.log('file saved', file))
     );
   }
 
   getFile(path: string) {
-    return this.ipfs$.pipe(switchMap((ipfs) => {
+    return this.ipfs$.pipe(
+      switchMap((ipfs) => {
+        return from(ipfs.cat(path));
+      }),
+      first()
+    );
+  }
 
-      return from(ipfs.get(path))
-    }),first());
-  } 
+  private async connectToPeers() {
+    if (!this.node) {
+      throw new Error('IPFS node not initalized');
+    }
+    const peers = await this.node!.swarm.peers();
+    console.log('peers', peers);
+    await Promise.all(peers.map(async (peer: any) => {
+      if (peers.indexOf(peer) !== -1) return
+      try {
+          await this.node!.ping(peer)
+          await this.node!.swarm.connect("/p2p-circuit/ipfs/" + peer)
+      } catch (e) {
+          console.error(e)
+      }
+  }))
+  }
+
+  private cat(ipfs: any, path: string) {
+    return new Promise((resolve, reject) => {
+      ipfs.cat(path, { buffer: true }, (err: any, stream: any) => {
+        if (err) {
+          reject(err);
+        }
+        let res = '';
+
+        stream.on('data', function (chunk: any) {
+          res += chunk.toString();
+        });
+
+        stream.on('error', function (err: any) {
+          console.error(err);
+          throw new Error(`Cannot read path ${ipfs}`);
+        });
+
+        stream.on('end', function () {
+          console.log('Got:', res);
+          resolve(res);
+        });
+      });
+    });
+  }
+
+
 }
