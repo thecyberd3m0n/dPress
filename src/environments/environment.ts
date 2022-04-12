@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   rootDirectory: 'example-uncensorable-dapp',
-  rootAddress: '/orbitdb/zdpuAy2jR22md8AWKuSB8gupWMUpCxSjybuFrPF1kYaSwyxX4/example-uncensorable-dapp',
+  rootAddress: '/orbitdb/zdpuAou8QpZyiRpGELrjjPYFhhHh914vmfKsCQfsYrFeqbLAE/example-uncensorable-dapp',
   IPFSConfig: {
     repo: '/orbitdb/dpress',
     start: true,
