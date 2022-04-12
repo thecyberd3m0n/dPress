@@ -1,6 +1,6 @@
 import { IpfsService } from './ipfs.service';
 import { Injectable } from '@angular/core';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -16,10 +16,6 @@ export class ImageService {
   }
 
   getImage(path: string) {
-    return this.ipfsService.getFile(path).pipe(map((buffer: Uint8Array) => {
-      return btoa(
-        buffer.reduce((data, byte) => data + String.fromCharCode(byte), '')
-     );
-    }));
+    return this.ipfsService.getFile(path).pipe(tap(x => console.log(x)));
   }
 }

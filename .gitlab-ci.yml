@@ -1,0 +1,23 @@
+image: node:16.14.0
+
+stages:
+  - deploy
+
+pages:
+  stage: deploy
+  script:
+    - npm install -g @angular/cli
+    - cd client/
+    - npm ci
+    - ng build --prod --base-href="https://dpressnadzor.gitlab.io/dpress-web/"
+    - cd ../
+    - rm -rf public
+    - mkdir public
+    - mv client/dist/Multihodl/* public/
+    - cp public/index.html public/404.html
+
+  artifacts:
+    paths:
+      - public
+  only:
+    - main

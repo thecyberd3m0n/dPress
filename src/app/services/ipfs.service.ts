@@ -89,7 +89,7 @@ export class IpfsService {
       switchMap(async (ipfs) => {
         console.log('fileContent', fileContent);
         try {
-          const result = await (ipfs as any).add(fileContent);
+          const result = await (ipfs as any).add(fileContent, { pin: true });
           console.log(result);
           return result;
         } catch (e) {
@@ -103,7 +103,7 @@ export class IpfsService {
   getFile(path: string) {
     return this.ipfs$.pipe(
       switchMap((ipfs) => {
-        return from(ipfs.cat(path));
+        return from(this.cat(ipfs, path));
       }),
       first()
     );
